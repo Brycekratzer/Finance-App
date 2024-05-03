@@ -1,0 +1,21 @@
+ScreenManager:
+    MainScreen:
+    AnotherScreen:
+
+<MainScreen>:
+    name: 'main'
+    BoxLayout:
+        orientation: 'vertical'
+        Button:
+            text: 'Go to Another Page'
+            on_press: root.manager.current = 'another'
+
+<AnotherScreen>:
+    name: 'another'
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Welcome to Another Page!'
+        Button:
+            text: 'Go Back'
+            on_press: root.manager.current = 'main'
