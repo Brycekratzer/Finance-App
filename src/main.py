@@ -13,6 +13,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.boxlayout import BoxLayout
 from kivy.graphics import Color, Rectangle
 from kivy.storage.jsonstore import JsonStore
+
 class FrontPage(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -90,13 +91,28 @@ class UIPage(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.store = JsonStore('bills.json')
+        self.utility_store = JsonStore('utility.json')
         
-        layout = GridLayout(cols=1, spacing=10, padding=20)
+        # Set up main layout and top back button box
+        layout = GridLayout(cols=1, spacing=20, padding=30)
+        top_box = BoxLayout(orientation='vertical', size_hint=(.03,.02))
+        back_button = Button(
+            text='Home',
+            background_color=(0, 0, 1, 1),
+            color=(1, 1, 1, 1),
+            font_size=24,
+            font_name='Arial',
+            size_hint=(0.09, 0.07),
+            on_press=self.go_back
+        )
+        top_box.add_widget(back_button)
+        layout.add_widget(top_box)
         
+        # Set up display for current bills
         current_bills_label = Label(text='Current Bills', size_hint=(1, None), height=30, font_size=20)
         layout.add_widget(current_bills_label)
         
-        scroll_view = ScrollView(size_hint=(1, 0.4))
+        scroll_view = ScrollView(size_hint=(1, 0.3))
         self.current_bills_box = GridLayout(cols=1, spacing=5, size_hint_y=None)
         self.current_bills_box.bind(minimum_height=self.current_bills_box.setter('height'))
         scroll_view.add_widget(self.current_bills_box)
@@ -105,52 +121,72 @@ class UIPage(Screen):
         add_bill_label = Label(text='Add/Edit Bills', size_hint=(1, None), height=30, font_size=20)
         layout.add_widget(add_bill_label)
         
-        bill_input_layout = GridLayout(cols=1, spacing=20, size_hint=(1, None), height=200)
+        # Sets up input text boxes in own grid layout
+        add_edit_layout = GridLayout(cols=2, spacing=30, size_hint=(1, None), size_hint_y=.3)
+        add_bill_panel = GridLayout(cols=1, padding=5)
+        utility_bill_panel = GridLayout(cols=1, padding=5)
+        
+        bill_input_layout = GridLayout(cols=2, spacing=80, size_hint=(1, None), height=150, padding=40)
         
         bill_name_input = TextInput(
             multiline=False, 
             hint_text='Bill name', 
-            size_hint=(0.4, 0.05),  # Adjusted size_hint
-            pos_hint={'center_x': 0.5, 'center_y': 0.6}  # Adjusted position
+            size_hint=(0.25, 0.05),  # Adjusted size_hint
+            pos_hint={'x': 0.5, 'y': 0.6}  # Adjusted position
         )
         bill_input_layout.add_widget(bill_name_input) 
         
         bill_amount_input = TextInput(
             multiline=False, 
             hint_text='USD Amount',
-            size_hint=(0.4, 0.05),  # Adjusted size_hint
-            pos_hint={'center_x': 0.5, 'center_y': 0.5}  # Adjusted position
+            size_hint=(0.25, 0.05),  # Adjusted size_hint
+            pos_hint={'x': 0.5, 'y': 0.5}  # Adjusted position
         )
         bill_input_layout.add_widget(bill_amount_input) 
+        add_bill_panel.add_widget(bill_input_layout)
         
-        layout.add_widget(bill_input_layout)
-        
+        # Adds buttons to bottom of bill input 
         add_button = Button(
             text='Add Bill',
             background_color=(0, 0, 1, 1),
             color=(1, 1, 1, 1),
-            font_size=18,  # Reduced font size
+            font_size=24,
             font_name='Arial',
-            size_hint=(0.3, 0.08),  # Adjusted size_hint
-            pos_hint={'center_x': 0.5, 'center_y': 0.15},  # Adjusted position
+            size_hint=(0.2, .1),
+            pos_hint={'center_x': 0.5, 'center_y': 0.80},
             on_press=lambda x: self.add_update_bill(bill_name_input.text, bill_amount_input.text)
         )
-        layout.add_widget(add_button) 
         
-        back_button = Button(
-            text='Home',
+        # Set up utility panel
+        utility_label = Label(text='Monthly Utility (Average)', size_hint=(1, None), height=30)
+        utility_bill_panel.add_widget(utility_label)
+        
+        utility_input_layout = GridLayout(cols=1, spacing=20, padding=90)
+        self.utility_display = Label(text='', size_hint=(1, None), height=30)
+        utility_input_layout.add_widget(self.utility_display)
+        
+        utility_input = TextInput(multiline=False, hint_text='Enter utility amount', size_hint=(.3, .2))
+        utility_input_layout.add_widget(utility_input)
+        
+        utility_button = Button(
+            text='Update Utility',
             background_color=(0, 0, 1, 1),
             color=(1, 1, 1, 1),
-            font_size=18,  # Reduced font size
-            font_name='Arial',
-            size_hint=(0.3, 0.08),  # Adjusted size_hint
-            pos_hint={'center_x': 0.5, 'center_y': 0.05},  # Adjusted position
-            on_press=self.go_back
+            font_size=18,
+            size_hint=(0.2, .3),
+            on_press=lambda x: self.update_utility(utility_input.text)
         )
-        layout.add_widget(back_button)  # Add the back button to the layout
+        utility_input_layout.add_widget(utility_button)
+        utility_bill_panel.add_widget(utility_input_layout)
         
-        self.add_widget(layout)  # Add the main layout to the UIPage screen
-        self.load_bills()  # Load the existing bills from storage
+        add_bill_panel.add_widget(add_button)
+        add_edit_layout.add_widget(add_bill_panel)
+        add_edit_layout.add_widget(utility_bill_panel)
+        layout.add_widget(add_edit_layout) 
+        
+        self.add_widget(layout)
+        self.load_bills()
+        self.load_utility()
 
         with self.canvas.before:
             Color(0, 0, 0.2, 1)  # Dark blue background color
@@ -158,8 +194,6 @@ class UIPage(Screen):
         
         self.bind(size=self._update_rect, pos=self._update_rect)
         
-        
-    
     def _update_rect(self, instance, value):
         self.rect.pos = instance.pos
         self.rect.size = instance.size
@@ -173,7 +207,7 @@ class UIPage(Screen):
         self.current_bills_box.clear_widgets()
         for bill_name in self.store.keys():
             bill_amount = self.store.get(bill_name)['amount']
-            bill_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=40, padding=5)
+            bill_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=100, padding=30)
             with bill_box.canvas.before:
                 Color(0, 0, 0.3, 1)  # Lighter dark blue color for content box
                 bill_box.rect = Rectangle(size=bill_box.size, pos=bill_box.pos)
@@ -186,17 +220,10 @@ class UIPage(Screen):
             bill_info.add_widget(bill_amount_label)
             bill_box.add_widget(bill_info)
             
-            edit_button = Button(text='Edit', size_hint=(0.2, 1), font_size=14, on_press=lambda x, bill=bill_name: self.show_edit_bill(bill))
-            bill_box.add_widget(edit_button)
-            
             delete_button = Button(text='Delete', size_hint=(0.2, 1), font_size=14, on_press=lambda x, bill=bill_name: self.delete_bill(bill))
             bill_box.add_widget(delete_button)
             
             self.current_bills_box.add_widget(bill_box)
-    
-    def show_edit_bill(self, bill_name):
-        # Implement the logic to display the text boxes for editing the selected bill
-        pass
     
     def delete_bill(self, bill_name):
         if self.store.exists(bill_name):
@@ -209,6 +236,18 @@ class UIPage(Screen):
     
     def go_back(self, instance):
         self.manager.current = 'front'
+    
+    def load_utility(self):
+        if self.utility_store.exists('utility'):
+            utility_amount = self.utility_store.get('utility')['amount']
+            self.utility_display.text = f"Current Utility: ${utility_amount}"
+        else:
+            self.utility_display.text = "No utility set"
+    
+    def update_utility(self, utility_amount):
+        if utility_amount:
+            self.utility_store.put('utility', amount=utility_amount)
+            self.load_utility()
        
 # Grabs users pay stub, assumes it is a by monthy pay stub, then properly distributes the pay stub to each category
 class APSPage(Screen):
