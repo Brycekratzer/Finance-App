@@ -12,7 +12,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.textinput import TextInput
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.boxlayout import BoxLayout
-from kivy.graphics import Color, Rectangle
+from kivy.graphics import Color, Rectangle, Canvas
 from kivy.storage.jsonstore import JsonStore
 from datetime import datetime
 from kivy.uix.popup import Popup
@@ -97,22 +97,23 @@ class UIPage(Screen):
         
         # Set up main layout and top back button box
         layout = GridLayout(cols=1, spacing=20, padding=30)
-        top_box = BoxLayout(orientation='vertical', size_hint=(.045,.035))
+        top_box = BoxLayout(orientation='vertical', size_hint=(1, None), height=50)
 
         back_button = Button(
             text='Home',
+            background_normal='',
             background_color=(0, 0, 1, 1),
             color=(1, 1, 1, 1),
             font_size=18,
-            font_name='Arial',
-            size_hint=(0.09, 0.07),
+            font_name='Roboto',
+            size_hint=(0.09, 1),
             on_press=self.go_back
         )
         top_box.add_widget(back_button)
         layout.add_widget(top_box)
         
         # Set up display for current bills
-        current_bills_label = Label(text='Current Bills', size_hint=(1, None), height=30, font_size=40)
+        current_bills_label = Label(text='Current Bills', size_hint=(1, None), height=50, font_size=40, font_name='Roboto', bold=True)
         layout.add_widget(current_bills_label)
         
         scroll_view = ScrollView(size_hint=(1, 0.3))
@@ -121,88 +122,104 @@ class UIPage(Screen):
         scroll_view.add_widget(self.current_bills_box)
         layout.add_widget(scroll_view)
         
-        add_bill_label = Label(text='Add/Edit Bills', size_hint=(1, None), height=30, font_size=40)
+        add_bill_label = Label(text='Add/Edit Bills', size_hint=(1, None), height=50, font_size=40, font_name='Roboto', bold=True)
         layout.add_widget(add_bill_label)
         
         # Sets up input text boxes in own grid layout
-        add_edit_layout = GridLayout(cols=2, spacing=10, size_hint=(1, None), size_hint_y=.3, padding=10) # Main Layout that stores both utility and adding bills 
-        add_bill_panel = GridLayout(cols=1, padding=5) # Adding bills panel
-        utility_bill_panel = GridLayout(cols=1, padding=5) # Adding utilites panel
+        add_edit_layout = GridLayout(cols=2, spacing=20, size_hint=(1, None), height=300, padding=10)  # Main Layout that stores both utility and adding bills 
+        
+        add_bill_panel = GridLayout(cols=1, padding=20, spacing=10)  # Adding bills panel
+        add_bill_panel_bg = Rectangle(size=add_bill_panel.size, pos=add_bill_panel.pos)
+        add_bill_panel.bind(size=self._update_rect, pos=self._update_rect)
+        with add_bill_panel.canvas.before:
+            Color(0.1, 0.1, 0.1, 1)  # Darker background color for add bill panel
+            add_bill_panel.rect = add_bill_panel_bg
         
         add_bill_sub_label = Label(
             text='Input Bills', 
             height=30, 
             font_size=30,
-            size_hint=(0.25, 0.05), 
-            pos_hint={'x': 0.03, 'y': 0.35} 
+            font_name='Roboto',
+            size_hint=(1, None)
         )
-        self.add_widget(add_bill_sub_label)
+        add_bill_panel.add_widget(add_bill_sub_label)
         
         bill_name_input = TextInput(
             multiline=False, 
             hint_text='Bill name', 
-            size_hint=(0.25, 0.05), 
-            pos_hint={'x': 0.03, 'y': 0.25}  
+            font_name='Roboto',
+            size_hint=(1, None),
+            height=50
         )
-        self.add_widget(bill_name_input)
+        add_bill_panel.add_widget(bill_name_input)
         
         bill_amount_input = TextInput(
             multiline=False, 
             hint_text='USD Amount',
-            size_hint=(0.25, 0.05),
-            pos_hint={'x': 0.03, 'y': 0.15} 
+            font_name='Roboto',
+            size_hint=(1, None),
+            height=50
         )
-        self.add_widget(bill_amount_input)
+        add_bill_panel.add_widget(bill_amount_input)
         
-        # Adds buttons to bottom of bill input 
         add_button = Button(
             text='Add Bill',
+            background_normal='',
             background_color=(0, 0, 1, 1),
             font_size=24,
-            font_name='Arial',
-            size_hint=(.15,.10),
-            pos_hint={'x': 0.30, 'center_y': 0.22},
+            font_name='Roboto',
+            size_hint=(1, None),
+            height=50,
             on_press=lambda x: self.add_update_bill(bill_name_input.text, bill_amount_input.text)
         )
-        self.add_widget(add_button)
+        add_bill_panel.add_widget(add_button)
         
-        # Set up utility panel
+        utility_bill_panel = GridLayout(cols=1, padding=20, spacing=10)  # Adding utilities panel
+        utility_bill_panel_bg = Rectangle(size=utility_bill_panel.size, pos=utility_bill_panel.pos)
+        utility_bill_panel.bind(size=self._update_rect, pos=self._update_rect)
+        with utility_bill_panel.canvas.before:
+            Color(0.1, 0.1, 0.1, 1)  # Darker background color for utility panel
+            utility_bill_panel.rect = utility_bill_panel_bg
+        
         utility_label = Label(
             text='Monthly Utility (Average)', 
             height=30, 
             font_size=30,
-            size_hint=(0.25, 0.05), 
-            pos_hint={'x': 0.61, 'y': 0.35} 
+            font_name='Roboto',
+            size_hint=(1, None)
         )
-        self.add_widget(utility_label)
+        utility_bill_panel.add_widget(utility_label)
     
         self.utility_display = Label(
             text='', 
-            size_hint=(.20, 0.05),
-            size=(100, 30),
-            pos_hint={'x': 0.63, 'y': 0.30}
+            size_hint=(1, None),
+            height=30,
+            font_name='Roboto'
         )
-        self.add_widget(self.utility_display)
+        utility_bill_panel.add_widget(self.utility_display)
         self.load_utility()
         
         utility_input = TextInput(
             multiline=False, 
             hint_text='Enter utility amount',
-            size_hint=(0.25, 0.05), 
-            pos_hint={'x': 0.60, 'y': 0.25}  
+            font_name='Roboto',
+            size_hint=(1, None),
+            height=50
         )
-        self.add_widget(utility_input)
+        utility_bill_panel.add_widget(utility_input)
         
         utility_button = Button(
             text='Update Utility',
+            background_normal='',
             background_color=(0, 0, 1, 1),
             color=(1, 1, 1, 1),
             font_size=20,
-            size_hint=(.15,.10),
-            pos_hint={'x': .65, 'y': .13},
+            font_name='Roboto',
+            size_hint=(1, None),
+            height=50,
             on_press=lambda x: self.update_utility(utility_input.text)
         )
-        self.add_widget(utility_button)
+        utility_bill_panel.add_widget(utility_button)
         
         add_edit_layout.add_widget(add_bill_panel)
         add_edit_layout.add_widget(utility_bill_panel)
@@ -213,14 +230,14 @@ class UIPage(Screen):
         self.load_utility()
 
         with self.canvas.before:
-            Color(0, 0, 0.2, 1)  # Dark blue background color
+            Color(20/255, 38/255, 81/255, 1) # Dark blue background color
             self.rect = Rectangle(size=self.size, pos=self.pos)
         
         self.bind(size=self._update_rect, pos=self._update_rect)
                
     def _update_rect(self, instance, value):
-        self.rect.pos = instance.pos
-        self.rect.size = instance.size
+        instance.rect.pos = instance.pos
+        instance.rect.size = instance.size
             
     def add_update_bill(self, bill_name, bill_amount):
         if bill_name and bill_amount:
@@ -238,13 +255,22 @@ class UIPage(Screen):
             bill_box.bind(size=self._update_bill_rect, pos=self._update_bill_rect)
             
             bill_info = BoxLayout(orientation='horizontal', size_hint=(0.6, 1))
-            bill_name_label = Label(text=f"{bill_name}", size_hint=(0.8, 1))
+            bill_name_label = Label(text=f"{bill_name}", size_hint=(0.8, 1), font_name='Roboto')
             bill_info.add_widget(bill_name_label)
-            bill_amount_label = Label(text=f"${bill_amount}", size_hint=(0.2, 1))
+            bill_amount_label = Label(text=f"${bill_amount}", size_hint=(0.2, 1), font_name='Roboto')
             bill_info.add_widget(bill_amount_label)
             bill_box.add_widget(bill_info)
             
-            delete_button = Button(text='Delete', size_hint=(0.2, 1), font_size=14, on_press=lambda x, bill=bill_name: self.delete_bill(bill))
+            delete_button = Button(
+                text='Delete',
+                size_hint=(0.2, 1),
+                font_size=14,
+                font_name='Roboto',
+                background_normal='',
+                background_color=(1, 0, 0, 1),
+                color=(1, 1, 1, 1),
+                on_press=lambda x, bill=bill_name: self.delete_bill(bill)
+            )
             bill_box.add_widget(delete_button)
             
             self.current_bills_box.add_widget(bill_box)
