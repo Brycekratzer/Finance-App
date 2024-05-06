@@ -128,37 +128,42 @@ class UIPage(Screen):
         add_edit_layout = GridLayout(cols=2, spacing=10, size_hint=(1, None), size_hint_y=.3, padding=10) # Main Layout that stores both utility and adding bills 
         add_bill_panel = GridLayout(cols=1, padding=5) # Adding bills panel
         utility_bill_panel = GridLayout(cols=1, padding=5) # Adding utilites panel
-        
-        # bill_input_layout = GridLayout(cols=2, spacing=80, size_hint=(1, None), height=150, padding=40) # Text box layout
+        add_bill_sub_label = Label(
+            text='Input Bills', 
+            height=30, 
+            font_size=30,
+            size_hint=(0.25, 0.05), 
+            pos_hint={'x': 0.03, 'y': 0.35} 
+        )
+        self.add_widget(add_bill_sub_label)
         
         bill_name_input = TextInput(
             multiline=False, 
             hint_text='Bill name', 
             size_hint=(0.25, 0.05), 
-            pos_hint={'x': 0.15, 'y': 0.25}  
+            pos_hint={'x': 0.03, 'y': 0.25}  
         )
-        layout.add_widget(bill_name_input)
+        self.add_widget(bill_name_input)
         
         bill_amount_input = TextInput(
             multiline=False, 
             hint_text='USD Amount',
             size_hint=(0.25, 0.05),
-            pos_hint={'x': 0.30, 'y': 0.25} 
+            pos_hint={'x': 0.03, 'y': 0.15} 
         )
-        layout.add_widget(bill_amount_input)
+        self.add_widget(bill_amount_input)
         
         # Adds buttons to bottom of bill input 
         add_button = Button(
             text='Add Bill',
             background_color=(0, 0, 1, 1),
-            color=(1, 1, 1, 1),
             font_size=24,
             font_name='Arial',
-            size_hint=(.15,.15),
-            pos_hint={'x': 0.225, 'y': 0.20},
-            on_press=lambda x: self.layout(bill_name_input.text, bill_amount_input.text)
+            size_hint=(.15,.10),
+            pos_hint={'x': 0.30, 'center_y': 0.22},
+            on_press=lambda x: self.add_update_bill(bill_name_input.text, bill_amount_input.text)
         )
-        layout.add_widget(add_button)
+        self.add_widget(add_button)
         
         # Set up utility panel
         utility_label = Label(text='Monthly Utility (Average)', size_hint=(1, None), height=15)
