@@ -128,6 +128,7 @@ class UIPage(Screen):
         add_edit_layout = GridLayout(cols=2, spacing=10, size_hint=(1, None), size_hint_y=.3, padding=10) # Main Layout that stores both utility and adding bills 
         add_bill_panel = GridLayout(cols=1, padding=5) # Adding bills panel
         utility_bill_panel = GridLayout(cols=1, padding=5) # Adding utilites panel
+        
         add_bill_sub_label = Label(
             text='Input Bills', 
             height=30, 
@@ -166,26 +167,42 @@ class UIPage(Screen):
         self.add_widget(add_button)
         
         # Set up utility panel
-        utility_label = Label(text='Monthly Utility (Average)', size_hint=(1, None), height=15)
-        utility_bill_panel.add_widget(utility_label)
+        utility_label = Label(
+            text='Monthly Utility (Average)', 
+            height=30, 
+            font_size=30,
+            size_hint=(0.25, 0.05), 
+            pos_hint={'x': 0.61, 'y': 0.35} 
+        )
+        self.add_widget(utility_label)
+    
+        self.utility_display = Label(
+            text='', 
+            size_hint=(.20, 0.05),
+            size=(100, 30),
+            pos_hint={'x': 0.63, 'y': 0.30}
+        )
+        self.add_widget(self.utility_display)
+        self.load_utility()
         
-        utility_input_layout = GridLayout(cols=1, spacing=10, padding=90) # Layout of text box for input
-        self.utility_display = Label(text='', size_hint=(1, None), height=30)
-        utility_input_layout.add_widget(self.utility_display)
-        
-        utility_input = TextInput(multiline=False, hint_text='Enter utility amount')
-        utility_input_layout.add_widget(utility_input)
+        utility_input = TextInput(
+            multiline=False, 
+            hint_text='Enter utility amount',
+            size_hint=(0.25, 0.05), 
+            pos_hint={'x': 0.60, 'y': 0.25}  
+        )
+        self.add_widget(utility_input)
         
         utility_button = Button(
             text='Update Utility',
             background_color=(0, 0, 1, 1),
             color=(1, 1, 1, 1),
-            font_size=18,
-            size_hint=(0.2, .3),
+            font_size=20,
+            size_hint=(.15,.10),
+            pos_hint={'x': .65, 'y': .13},
             on_press=lambda x: self.update_utility(utility_input.text)
         )
-        utility_input_layout.add_widget(utility_button)
-        utility_bill_panel.add_widget(utility_input_layout)
+        self.add_widget(utility_button)
         
         add_edit_layout.add_widget(add_bill_panel)
         add_edit_layout.add_widget(utility_bill_panel)
