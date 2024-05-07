@@ -1,0 +1,55 @@
+<FrontPage>:
+    canvas.before:
+        Color:
+            rgba: 0, 24/255, 44/255, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    
+    Label:
+        text: 'Welcome to BBFM'
+        pos_hint: {'center_x': 0.5, 'center_y': 0.90}
+    
+    Button:
+        text: 'Add/Edit Bills'
+        background_normal: ''
+        background_color: 14/255, 40/255, 62/255, 1
+        color: 1, 1, 1, 1
+        font_size: 24
+        font_name: 'Arial'
+        size_hint: 0.2, 0.1
+        pos_hint: {'center_x': 0.5, 'center_y': 0.80}
+        on_press: root.go_to_UI_page()
+    
+    Button:
+        text: 'Add pay stub'
+        background_normal: ''
+        background_color: 14/255, 40/255, 62/255, 1
+        color: 1, 1, 1, 1
+        font_size: 24
+        font_name: 'Arial'
+        size_hint: 0.2, 0.1
+        pos_hint: {'center_x': 0.5, 'center_y': 0.60}
+        on_press: root.go_to_APS_page()
+    
+    Button:
+        text: 'Current Finances'
+        background_normal: ''
+        background_color: 14/255, 40/255, 62/255, 1
+        color: 1, 1, 1, 1
+        font_size: 24
+        font_name: 'Arial'
+        size_hint: 0.2, 0.1
+        pos_hint: {'center_x': 0.5, 'center_y': 0.40}
+        on_press: root.go_to_VCF_page()
+    
+    Button:
+        text: 'Adjust Distributions'
+        background_normal: ''
+        background_color: 14/255, 40/255, 62/255, 1
+        color: 1, 1, 1, 1
+        font_size: 24
+        font_name: 'Arial'
+        size_hint: 0.2, 0.1
+        pos_hint: {'center_x': 0.5, 'center_y': 0.20}
+        on_press: root.go_to_AJ_page()
