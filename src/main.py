@@ -303,81 +303,116 @@ class UIPage(Screen):
 class APSPage(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        
+        # Files for Storing Paystub and distribution
         self.paystub_store = JsonStore('paystub.json')
         self.distribution_store = JsonStore('distribution.json')
         
+        # Main layout
         layout = GridLayout(cols=1, spacing=20, padding=30)
         
-        self.add_widget(Label(text='Add Pay Stub', size_hint=(1, None), height=30, font_size=20))
+        top_box = BoxLayout(orientation='vertical', size_hint=(1, None), height=50)
+        back_button = Button(
+            text='Home',
+            background_normal='',
+            background_color=(0, 0, 1, 1),
+            color=(1, 1, 1, 1),
+            font_size=18,
+            font_name='Roboto',
+            size_hint=(0.09, 1),
+            on_press=self.go_back
+        )
+        top_box.add_widget(back_button)
+        layout.add_widget(top_box)
         
-        self.paystub_box = GridLayout(cols=1, spacing=10, size_hint_y=None)
-        self.paystub_box.bind(minimum_height=self.paystub_box.setter('height'))
+        paystub_label = Label(text='Past Pay Stubs', size_hint=(1, None), height=50, font_size=40, font_name='Roboto', bold=True)
+        layout.add_widget(paystub_label)
         
+        # Subbox storing each past paystubs
         paystub_scroll = ScrollView(size_hint=(1, 0.3))
+        self.paystub_box = GridLayout(cols=1, spacing=5, size_hint_y=None)
+        self.paystub_box.bind(minimum_height=self.paystub_box.setter('height'))
         paystub_scroll.add_widget(self.paystub_box)
         layout.add_widget(paystub_scroll)
         
-        paystub_input_layout = GridLayout(cols=2, spacing=10, size_hint_y=None, height=100)
+        add_paystub_label = Label(text='Add Pay Stub', size_hint=(1, None), height=50, font_size=40, font_name='Roboto', bold=True)
+        layout.add_widget(add_paystub_label)
         
-        paystub_amount_input = TextInput(multiline=False, hint_text='Enter pay stub amount', size_hint=(0.8, None), height=40)
+        # Adding Paystubs Layout
+        paystub_input_layout = GridLayout(cols=1, spacing=10, size_hint=(1, None), height=200, padding=20)
+        paystub_amount_input = TextInput(multiline=False, hint_text='Enter pay stub amount', font_name='Roboto', size_hint=(1, None), height=50)
         paystub_input_layout.add_widget(paystub_amount_input)
         
         add_paystub_button = Button(
             text='Add Pay Stub',
+            background_normal='',
             background_color=(0, 0, 1, 1),
             color=(1, 1, 1, 1),
-            font_size=18,
-            size_hint=(0.2, None),
-            height=40,
+            font_size=24,
+            font_name='Roboto',
+            size_hint=(1, None),
+            height=50,
             on_press=lambda x: self.add_paystub(paystub_amount_input.text)
         )
         paystub_input_layout.add_widget(add_paystub_button)
         
         adjust_distribution_button = Button(
             text='Adjust Distribution',
+            background_normal='',
             background_color=(0, 0, 1, 1),
             color=(1, 1, 1, 1),
-            font_size=18,
-            size_hint=(0.4, None),
-            height=40,
+            font_size=24,
+            font_name='Roboto',
+            size_hint=(1, None),
+            height=50,
             on_press=self.go_to_adjust_distribution
         )
         paystub_input_layout.add_widget(adjust_distribution_button)
         
         layout.add_widget(paystub_input_layout)
         
-        BackButton = Button(
-            text='Go Home',
-            background_color=(0, 0, 1, 1),
-            color=(1, 1, 1, 1),
-            font_size=24,
-            font_name='Arial',
-            size_hint=(0.2, 0.1),
-            pos_hint={'center_x': 0.5, 'center_y': 0.10},
-            on_press=self.go_back
-        )
-        layout.add_widget(BackButton)
-        
         self.add_widget(layout)
         self.load_paystubs()
-
+        
+        with self.canvas.before:
+            Color(20/255, 38/255, 81/255, 1) # Dark blue background color
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+        
+        self.bind(size=self._update_rect, pos=self._update_rect)
+               
+    def _update_rect(self, instance, value):
+        instance.rect.pos = instance.pos
+        instance.rect.size = instance.size
+    
     def load_paystubs(self):
         self.paystub_box.clear_widgets()
         for paystub_date in self.paystub_store.keys():
             paystub_amount = self.paystub_store.get(paystub_date)['amount']
-            paystub_label = Label(text=f"Date: {paystub_date}, Amount: ${paystub_amount}", size_hint_y=None, height=30)
-            self.paystub_box.add_widget(paystub_label)
+            paystub_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=50, padding=10)
+            with paystub_box.canvas.before:
+                Color(0, 0, 0.3, 1)  # Lighter dark blue color for content box
+                paystub_box.rect = Rectangle(size=paystub_box.size, pos=paystub_box.pos)
+            paystub_box.bind(size=self._update_paystub_rect, pos=self._update_paystub_rect)
+            
+            paystub_label = Label(text=f"Date: {paystub_date}, Amount: ${paystub_amount}", font_name='Roboto')
+            paystub_box.add_widget(paystub_label)
+            
+            self.paystub_box.add_widget(paystub_box)
+    
+    def _update_paystub_rect(self, instance, value):
+        instance.rect.pos = instance.pos
+        instance.rect.size = instance.size
     
     def add_paystub(self, paystub_amount):
         if paystub_amount:
             confirm_popup = Popup(title='Confirm', size_hint=(0.5, 0.3))
             confirm_layout = BoxLayout(orientation='vertical', spacing=10)
-            confirm_label = Label(text=f"Is the pay stub amount of ${paystub_amount} correct?")
+            confirm_label = Label(text=f"Is the pay stub amount of ${paystub_amount} correct?", font_name='Roboto')
             confirm_layout.add_widget(confirm_label)
             
             button_layout = BoxLayout(spacing=10)
-            yes_button = Button(text='Yes', on_press=lambda x: self.save_paystub(paystub_amount, confirm_popup))
-            no_button = Button(text='No', on_press=confirm_popup.dismiss)
+            yes_button = Button(text='Yes', font_name='Roboto', on_press=lambda x: self.save_paystub(paystub_amount, confirm_popup))
+            no_button = Button(text='No', font_name='Roboto', on_press=confirm_popup.dismiss)
             button_layout.add_widget(yes_button)
             button_layout.add_widget(no_button)
             confirm_layout.add_widget(button_layout)
