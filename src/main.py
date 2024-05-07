@@ -16,6 +16,7 @@ from kivy.graphics import Color, Rectangle, Canvas
 from kivy.storage.jsonstore import JsonStore
 from datetime import datetime
 from kivy.uix.popup import Popup
+from kivy.garden.graph import Graph, LinePlot
 class FrontPage(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -407,7 +408,7 @@ class APSPage(Screen):
         if paystub_amount:
             confirm_popup = Popup(title='Confirm', size_hint=(0.5, 0.3))
             confirm_layout = BoxLayout(orientation='vertical', spacing=10)
-            confirm_label = Label(text=f"Is the pay stub amount of ${paystub_amount} correct?", font_name='Roboto')
+            confirm_label = Label(text=f"Is the pay stub amount of ${paystub_amount} correct?\n *You can not delete a paystub*", font_name='Roboto')
             confirm_layout.add_widget(confirm_label)
             
             button_layout = BoxLayout(spacing=10)
@@ -427,19 +428,24 @@ class APSPage(Screen):
         popup.dismiss()
         
         # Perform calculations and distribute the money
-        self.calculate_distribution(float(paystub_amount))
-    
-    def calculate_distribution(self, paystub_amount):
+        self.calculate_distribution(paystub_date, float(paystub_amount))
+
+    def calculate_distribution(self, paystub_date, paystub_amount):
         bills_store = JsonStore('bills.json')
         utility_store = JsonStore('utility.json')
         
+        # Calculates Total Bills based on bi-weekly pay
         total_bills = 0
+        utility_bills = 0
         for bill_name in bills_store.keys():
             total_bills += float(bills_store.get(bill_name)['amount'])
         
         if utility_store.exists('utility'):
-            total_bills += float(utility_store.get('utility')['amount'])
+            utility_bills += float(utility_store.get('utility')['amount'])
+            utility_bills * 1.15 # Accounts for fluctuating utilites
+            total_bills += utility_bills
         
+        total_bills = total_bills/2        
         remaining_income = paystub_amount - total_bills
         
         distribution = self.get_distribution()
@@ -448,22 +454,24 @@ class APSPage(Screen):
         categories = ['Debt', 'Savings', 'Leisure', 'Food']
         for category in categories:
             amount = (distribution[category] / total_proportion) * remaining_income
-            self.update_finance(category, amount)
+            self.update_finance(paystub_date, category, amount)
+
     
     def get_distribution(self):
         if not self.distribution_store.exists('distribution'):
             # Default distribution
-            self.distribution_store.put('distribution', Debt=5, Savings=5, Leisure=5, Food=5)
+            self.distribution_store.put('distribution', Debt=8, Savings=9, Leisure=2, Food=5)
         
         return self.distribution_store.get('distribution')
     
-    def update_finance(self, category, amount):
+    def update_finance(self, paystub_date, category, amount):
         finance_store = JsonStore('finance.json')
-        if finance_store.exists(category):
-            current_amount = float(finance_store.get(category)['amount'])
-            finance_store.put(category, amount=current_amount + amount)
+        if finance_store.exists(paystub_date):
+            paystub_data = finance_store.get(paystub_date)
+            paystub_data[category] = paystub_data.get(category, 0) + amount
+            finance_store.put(paystub_date, **paystub_data)
         else:
-            finance_store.put(category, amount=amount)
+            finance_store.put(paystub_date, **{category: amount})
     
     def go_to_adjust_distribution(self, instance):
         self.manager.current = 'AJ page'
@@ -475,19 +483,102 @@ class APSPage(Screen):
 class VCFPage(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.add_widget(Label(text='View Finances', pos_hint={'center_x': .5, 'center_y': .9}))
-        BackButton = Button(
-            text='Go Home',
+        self.finance_store = JsonStore('finance.json')
+        self.paystub_store = JsonStore('paystub.json')
+        
+        layout = GridLayout(cols=1, spacing=20, padding=30)
+        
+        top_box = BoxLayout(orientation='vertical', size_hint=(1, None), height=50)
+        back_button = Button(
+            text='Home',
+            background_normal='',
             background_color=(0, 0, 1, 1),
             color=(1, 1, 1, 1),
-            font_size=24,
-            font_name='Arial',
-            size_hint=(0.2, 0.1),
-            pos_hint={'center_x': 0.5, 'center_y': 0.10},
+            font_size=18,
+            font_name='Roboto',
+            size_hint=(0.09, 1),
             on_press=self.go_back
         )
-        self.add_widget(BackButton)
-
+        top_box.add_widget(back_button)
+        layout.add_widget(top_box)
+        
+        current_finances_label = Label(text='Current Finances', size_hint=(1, None), height=50, font_size=40, font_name='Roboto', bold=True)
+        layout.add_widget(current_finances_label)
+        
+        self.distribution_table = GridLayout(cols=2, spacing=10, size_hint=(1, None), height=200)
+        layout.add_widget(self.distribution_table)
+        
+        graph_label = Label(text='Paystub Distribution Over Time', size_hint=(1, None), height=50, font_size=30, font_name='Roboto', bold=True)
+        layout.add_widget(graph_label)
+        
+        self.graph = Graph(xlabel='Date', ylabel='Amount', x_ticks_minor=5, x_ticks_major=25, y_ticks_major=50, y_grid_label=True, x_grid_label=True, padding=5, x_grid=True, y_grid=True, xmin=0, xmax=100, ymin=0, ymax=1000)
+        layout.add_widget(self.graph)
+        
+        total_money_label = Label(text='Total Money Earned: $0', size_hint=(1, None), height=50, font_size=30, font_name='Roboto', bold=True)
+        layout.add_widget(total_money_label)
+        
+        self.add_widget(layout)
+        self.load_distribution()
+        self.load_graph()
+        self.calculate_total_money(total_money_label)
+        
+        with self.canvas.before:
+            Color(20/255, 38/255, 81/255, 1) # Dark blue background color
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+        
+        self.bind(size=self._update_rect, pos=self._update_rect)
+    
+    def _update_rect(self, instance, value):
+        instance.rect.pos = instance.pos
+        instance.rect.size = instance.size
+    
+    def load_distribution(self):
+        self.distribution_table.clear_widgets()
+        latest_paystub_date = self.get_latest_paystub_date()
+        if latest_paystub_date:
+            distribution = self.finance_store.get(latest_paystub_date)
+            for category, amount in distribution.items():
+                category_label = Label(text=category, font_name='Roboto')
+                amount_label = Label(text=f'${amount:.2f}', font_name='Roboto')
+                self.distribution_table.add_widget(category_label)
+                self.distribution_table.add_widget(amount_label)
+        else:
+            no_data_label = Label(text='No paystub data available', font_name='Roboto')
+            self.distribution_table.add_widget(no_data_label)
+    
+    def get_latest_paystub_date(self):
+        paystub_dates = list(self.paystub_store.keys())
+        if paystub_dates:
+            return max(paystub_dates)
+        else:
+            return None
+    
+    def load_graph(self):
+        self.graph.clear_plot()
+        paystub_dates = list(self.paystub_store.keys())
+        paystub_dates.sort(reverse=True)
+        paystub_dates = paystub_dates[:6]  # Get the last 6 paystubs
+        
+        for paystub_date in paystub_dates:
+            distribution = self.finance_store.get(paystub_date)
+            total_amount = sum(distribution.values())
+            plot = LinePlot(color=[1, 1, 0, 1])
+            plot.points = [(paystub_date, total_amount)]
+            self.graph.add_plot(plot)
+        
+        self.graph.xmin = 0
+        self.graph.xmax = len(paystub_dates)
+        self.graph.x_ticks_major = 1
+        self.graph.x_labels = paystub_dates
+        self.graph.x_label_texture_size = (50, None)
+        
+        self.graph.ymin = 0
+        self.graph.ymax = max(sum(self.finance_store.get(date).values()) for date in paystub_dates) * 1.1
+    
+    def calculate_total_money(self, total_money_label):
+        total_money = sum(sum(self.finance_store.get(date).values()) for date in self.paystub_store.keys())
+        total_money_label.text = f'Total Money Earned: ${total_money:.2f}'
+    
     def go_back(self, instance):
         self.manager.current = 'front'
         
