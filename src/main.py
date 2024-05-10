@@ -771,14 +771,14 @@ class ADPage(Screen):
         current_distribution_label = Label(text='Current Distribution', size_hint=(1, None), height=50, font_size=40, font_name='Roboto', bold=True)
         layout.add_widget(current_distribution_label)
 
-        self.distribution_box = GridLayout(cols=2, spacing=10, size_hint_y=.35)
+        self.distribution_box = GridLayout(cols=2, spacing=10, size_hint_y=None, height=300)
         self.distribution_box.bind(minimum_height=self.distribution_box.setter('height'))
 
         self.category_labels = {}
         self.category_inputs = {}
-        categories = ['Debt', 'Food', 'Savings', 'Leisure']
+        categories = ['Debt', 'Savings','Leisure', 'Food']
         for category in categories:
-            category_box = BoxLayout(orientation='horizontal', size_hint_y=1, height=50, padding=10)
+            category_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=150, padding=10)
             with category_box.canvas.before:
                 Color(14/255, 40/255, 62/255, 1)
                 category_box.rect = Rectangle(size=category_box.size, pos=category_box.pos)
@@ -822,8 +822,10 @@ class ADPage(Screen):
 
         layout.add_widget(button_box)
 
-        note_label = Label(text='Note: Distribution takes effect after the next paystub is added.', size_hint=(1, None), height=30, font_size=14, font_name='Roboto')
+        note_label = Label(text='Note: Distribution takes effect after the next paystub is added.', size_hint=(1, None), height=10, font_size=14, font_name='Roboto')
+        Scale_label = Label(text='\n\n\n\n\n\n\nAggresive Spending: 7-10\n\nModerate Spending: 4-6\n\nLight Spending: 1-3\n\nNo Spending: 0', size_hint=(1, None), pos_hint={'center_x': .5, 'center_y': .35}, font_size=45, font_name='Roboto')
         layout.add_widget(note_label)
+        layout.add_widget(Scale_label)
 
         self.add_widget(layout)
 
@@ -861,11 +863,13 @@ class ADPage(Screen):
                 input_field.disabled = False
         else:
             self.edit_button.text = 'Edit Distribution'
+            distribution = {}
             for category, input_field in self.category_inputs.items():
                 value = int(input_field.text)
-                self.distribution_store.put('distribution', **{category: value})
+                distribution[category] = value
                 self.category_labels[category].text = f"{category}: {value}"
                 input_field.disabled = True
+            self.distribution_store.put('distribution', **distribution)
             self.load_distribution()
 
     def revert_to_recommended(self, instance):
