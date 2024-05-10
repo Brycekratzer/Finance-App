@@ -61,18 +61,17 @@ class FrontPage(Screen):
         )
         
         # View current finances button
-        ResetButton= Button(
-            text='ResetButton',
+        ResetButton = Button(
+            text='Reset',
             background_normal='',
             background_color=(14/255, 40/255, 62/255, 1),
             color=(1, 1, 1, 1),
             font_size=24,
             font_name='Arial',
             size_hint=(0.2, 0.1),
-            pos_hint={'center_x': 0.5, 'center_y': 0.40},
-            on_press=self.go_to_VCF_page
+            pos_hint={'center_x': 0.5, 'center_y': 0.20},
+            on_press=self.delete_current_finances
         )
-        
         self.add_widget(VCFbutton)
         self.add_widget(APSbutton)
         self.add_widget(UIbutton)
@@ -97,7 +96,47 @@ class FrontPage(Screen):
         self.manager.current = 'VCF page'
         
     def delete_current_finances(self, instance):
-        pass
+        reset_options = ['Reset all paystubs and finances', 'Reset all bills and utilities']
+        
+        # Create a popup for reset options
+        option_popup = Popup(title='Reset Options', size_hint=(0.6, 0.4))
+        option_layout = BoxLayout(orientation='vertical', spacing=10)
+        
+        for option in reset_options:
+            button = Button(text=option, font_name='Roboto', on_press=lambda x, opt=option: self.confirm_reset(opt, option_popup))
+            option_layout.add_widget(button)
+        
+        option_popup.content = option_layout
+        option_popup.open()
+
+    def confirm_reset(self, option, option_popup):
+        # Create a popup for confirmation
+        confirm_popup = Popup(title='Confirm Reset', size_hint=(0.6, 0.4))
+        confirm_layout = BoxLayout(orientation='vertical', spacing=10)
+        
+        confirm_label = Label(text=f"Are you sure you want to {option.lower()}?\nThis action cannot be undone.", font_name='Roboto')
+        confirm_layout.add_widget(confirm_label)
+        
+        button_layout = BoxLayout(spacing=10)
+        yes_button = Button(text='Yes', font_name='Roboto', on_press=lambda x: self.perform_reset(option, confirm_popup, option_popup))
+        no_button = Button(text='No', font_name='Roboto', on_press=confirm_popup.dismiss)
+        button_layout.add_widget(yes_button)
+        button_layout.add_widget(no_button)
+        confirm_layout.add_widget(button_layout)
+        
+        confirm_popup.content = confirm_layout
+        confirm_popup.open()
+
+    def perform_reset(self, option, confirm_popup, option_popup):
+        if option == 'Reset all paystubs and finances':
+            JsonStore('paystub.json').clear()
+            JsonStore('finance.json').clear()
+        elif option == 'Reset all bills and utilities':
+            JsonStore('bills.json').clear()
+            JsonStore('utility.json').clear()
+        
+        confirm_popup.dismiss()
+        option_popup.dismiss()
     
     def _update_rect(self, instance, value):
         self.rect.pos = instance.pos
@@ -261,6 +300,7 @@ class UIPage(Screen):
             self.load_bills()
     
     def load_bills(self):
+        self.store = JsonStore('bills.json')
         self.current_bills_box.clear_widgets()
         for bill_name in self.store.keys():
             bill_amount = self.store.get(bill_name)['amount']
@@ -304,6 +344,7 @@ class UIPage(Screen):
         self.manager.current = 'front'
     
     def load_utility(self):
+        self.utility_store = JsonStore('utility.json')
         if self.utility_store.exists('utility'):
             utility_amount = self.utility_store.get('utility')['amount']
             self.utility_display.text = f"Current Utility: ${utility_amount}"
@@ -314,12 +355,15 @@ class UIPage(Screen):
         if utility_amount:
             self.utility_store.put('utility', amount=utility_amount)
             self.load_utility()
+            
+    def on_enter(self):
+        self.load_utility()
+        self.load_bills()
        
 # Grabs users pay stub, assumes it is a by monthy pay stub, then properly distributes the pay stub to each category
 class APSPage(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
         # Files for Storing Paystub and distribution
         self.paystub_store = JsonStore('paystub.json')
         self.distribution_store = JsonStore('distribution.json')
@@ -375,19 +419,6 @@ class APSPage(Screen):
         )
         paystub_input_layout.add_widget(add_paystub_button)
         
-        adjust_distribution_button = Button(
-            text='Adjust Distribution',
-            background_normal='',
-            background_color=(14/255, 40/255, 62/255, 1),
-            color=(1, 1, 1, 1),
-            font_size=24,
-            font_name='Roboto',
-            size_hint=(1, None),
-            height=50,
-            on_press=self.go_to_adjust_distribution
-        )
-        paystub_input_layout.add_widget(adjust_distribution_button)
-        
         layout.add_widget(paystub_input_layout)
         
         self.add_widget(layout)
@@ -407,7 +438,8 @@ class APSPage(Screen):
     
     def load_paystubs(self):
         """Load and display the paystubs from the JSON store."""
-        self.paystub_box.clear_widgets()
+        self.paystub_store = JsonStore('paystub.json')
+        self.paystub_box.clear_widgets()  # Clear the existing widgets before loading
         for paystub_date in self.paystub_store.keys():
             paystub_amount = self.paystub_store.get(paystub_date)['amount']
             
@@ -524,6 +556,9 @@ class APSPage(Screen):
     def go_back(self, instance):
         """Navigate back to the front page."""
         self.manager.current = 'front'
+        
+    def on_enter(self):
+        self.load_paystubs()
 
 # Allows user to view there current finances, such as how much money they have earned, and where it has gone
 class VCFPage(Screen):
