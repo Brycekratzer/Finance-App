@@ -37,7 +37,7 @@ BBFM is a financial management application that helps users track their bills, i
 
 To run the application, execute the following command:
 ```
-python main.py
+python ./src/main.py
 ```
 
 ## Usage
