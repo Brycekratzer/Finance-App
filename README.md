@@ -27,7 +27,10 @@ BBFM is a financial management application that helps users track their bills, i
 
 2. Install the required dependencies:
    ```
+   python -m pip install --upgrade pip setuptools virtualenv
+   python -m venv kivy_venv
    source kivy_venv/bin/activate
+   python -m pip install "kivy[base]" kivy_examples
    ```
 
 ### Running the Application
