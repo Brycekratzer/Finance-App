@@ -15,7 +15,7 @@ BBFM is a financial management application that helps users track their bills, i
 
 ### Prerequisites
 
-- Python 3.x
+- Python 3.11
 - Kivy 2.3.0
 
 ### Installation
