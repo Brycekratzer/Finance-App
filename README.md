@@ -22,7 +22,7 @@ BBFM is a financial management application that helps users track their bills, i
 
 1. Clone the repository:
    ```
-   git clone https://github.com/your-username/bbfm.git
+   git clone https://github.com/Brycekratzer/Finance-App.git
    ```
 
 2. Install the required dependencies:
