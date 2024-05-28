@@ -39,16 +39,17 @@ class FrontPage(Screen):
         # Initializing buttons for front page
         # User input button
         UIbutton = Button(
-            text='Add/Edit Bills',
+            text='Add/Edit Bill',
             background_normal='',
             background_color=(14/255, 40/255, 62/255, 1),
             color=(1, 1, 1, 1),
-            font_size=24,
+            font_size=30,
             font_name='Arial',
             size_hint=(0.2, 0.1),
             pos_hint={'center_x': 0.35, 'center_y': 0.70},
             on_press=self.go_to_UI_page
         )
+        UIbutton.bind(size=self.update_font_size)
 
         # Add pay stub button
         APSbutton = Button(
@@ -116,6 +117,8 @@ class FrontPage(Screen):
 
         self.add_widget(Label(text='Welcome to BBFM', pos_hint={'center_x': 0.5, 'center_y': 0.90}))
 
+    def update_font_size(self, instance, value):
+            instance.font_size = min(instance.height, instance.width * .70) * 0.2
     def go_to_UI_page(self, instance):
         """
         Navigate to the 'UI page'.
