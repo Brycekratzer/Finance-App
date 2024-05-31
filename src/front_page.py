@@ -63,6 +63,7 @@ class FrontPage(Screen):
             pos_hint={'center_x': 0.35, 'center_y': 0.50},
             on_press=self.go_to_APS_page
         )
+        APSbutton.bind(size=self.update_font_size)
 
         # View current finances button
         VCFbutton = Button(
@@ -76,6 +77,7 @@ class FrontPage(Screen):
             pos_hint={'center_x': 0.65, 'center_y': 0.70},
             on_press=self.go_to_VCF_page
         )
+        VCFbutton.bind(size=self.update_font_size)
 
         ADButton = Button(
             text='Adjust Distributions',
@@ -88,6 +90,7 @@ class FrontPage(Screen):
             pos_hint={'center_x': 0.65, 'center_y': 0.50},
             on_press=self.go_to_AD_page
         )
+        ADButton.bind(size=self.update_font_size)
 
         # Reset current finances button
         ResetButton = Button(
@@ -101,7 +104,8 @@ class FrontPage(Screen):
             pos_hint={'center_x': 0.5, 'center_y': 0.25},
             on_press=self.delete_current_finances
         )
-
+        ResetButton.bind(size=self.update_font_size)
+        
         self.add_widget(VCFbutton)
         self.add_widget(APSbutton)
         self.add_widget(UIbutton)
