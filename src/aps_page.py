@@ -120,9 +120,10 @@ class APSPage(Screen):
         """Load and display the paystubs from the JSON store."""
         self.paystub_store = JsonStore('paystub.json')
         self.paystub_box.clear_widgets()  # Clear the existing widgets before loading
-        for paystub_date in self.paystub_store.keys():
-            paystub_amount = self.paystub_store.get(paystub_date)['amount']
-
+        for paystub_date_time in self.paystub_store.keys():
+            paystub_amount = self.paystub_store.get(paystub_date_time)['amount']
+            
+            paystub_date = datetime.strptime(paystub_date_time, "%Y-%m-%d_%H-%M-%S").strftime("%Y-%m-%d")
             # Create a box layout to hold the paystub label and set its properties
             paystub_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=50, padding=10)
 
@@ -187,7 +188,7 @@ class APSPage(Screen):
             paystub_amount (str): The amount of the paystub.
             popup (Popup): The confirmation popup instance.
         """
-        paystub_date = datetime.now().strftime('%Y-%m-%d')
+        paystub_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')  # Include timestamp
         self.paystub_store.put(paystub_date, amount=paystub_amount)
         self.load_paystubs()
         popup.dismiss()

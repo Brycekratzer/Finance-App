@@ -10,13 +10,13 @@ import kivy
 
 kivy.require('2.3.0')  # replace with your current kivy version!
 
-from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.screenmanager import Screen
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.graphics import Color, Rectangle
 from kivy.storage.jsonstore import JsonStore
+from kivy.uix.button import Label
 
 
 class VCFPage(Screen):
@@ -41,6 +41,7 @@ class VCFPage(Screen):
 
         # Set up the layout of the screen
         layout = GridLayout(cols=1, spacing=20, padding=30)
+
 
         # Add a top box with a back button
         top_box = BoxLayout(orientation='vertical', size_hint=(1, None), height=50)
